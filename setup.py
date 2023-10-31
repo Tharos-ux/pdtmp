@@ -5,6 +5,8 @@ from __namespace__ import *
 from sys import version_info, stderr
 from setuptools import setup
 from pkg_resources import require
+from os.path import exists
+from os import remove
 
 # Checking if Python version is correct
 if version_info[:2] < REQUIRED_PYTHON:
@@ -33,6 +35,9 @@ else:
         _iv: str = '.'.join([str(x) for x in _iv])
 
 # Creating the .toml file
+if exists('pyproject.toml'):
+    remove('pyproject.toml')
+
 _sb, _eb = "{", "}"
 with open('pyproject.toml', 'w', encoding='utf-8') as tomlwriter:
     tomlwriter.write(
