@@ -5,14 +5,7 @@ from __namespace__ import *
 from sys import version_info, stderr
 from setuptools import setup
 from pkg_resources import require
-from os.path import exists
-from os import remove
-
-# Checking if Python version is correct
-if version_info[:2] < REQUIRED_PYTHON:
-    stderr.write(
-        f"{NAME} requires Python {'.'.join(REQUIRED_PYTHON)} or higher and your current version is {version_info[:2]}.")
-    exit(1)
+from sys import argv
 
 # Getting requirements
 with open("requirements.txt", 'r', encoding='utf-8') as rreader:
@@ -22,49 +15,55 @@ with open("requirements.txt", 'r', encoding='utf-8') as rreader:
 _url: str = run(['git', 'config', '--get', 'remote.origin.url'],
                 stdout=PIPE).stdout.decode(encoding='utf-8').strip()
 
-# Computing version number
-if OVERRIDE_VN:
-    _iv: str = VN
+
+if argv[1] in ('install', 'sdist', 'bdist_wheel'):
+    # Checking if Python version is correct
+    if version_info[:2] < REQUIRED_PYTHON:
+        stderr.write(
+            f"{NAME} requires Python {'.'.join(REQUIRED_PYTHON)} or higher and your current version is {version_info[:2]}.")
+        exit(1)
+
+    # Computing version number
+    if OVERRIDE_VN:
+        _iv: str = VN
+    else:
+        try:
+            _iv: list = [int(x) for x in require(NAME)[0].version.split('.')]
+            _iv[-1] += 1
+        except:
+            _iv: list = [0, 0, 0]
+        finally:
+            _iv: str = '.'.join([str(x) for x in _iv])
+
+    _sb, _eb = "{", "}"
+    with open('pyproject.toml', 'w', encoding='utf-8') as tomlwriter:
+        tomlwriter.write(
+            f"""[build-system]
+    requires = ["setuptools>=61.0"]
+    build-backend = "setuptools.build_meta"
+
+    [project]
+    name = "{NAME}"
+    version = "{_iv}"
+    authors = [
+    {_sb} name="{AUTHOR[0]}", email="{AUTHOR_EMAIL[0]}" {_eb},
+    ]
+    description = "{DESCRIPTION}"
+    readme = "README.md"
+    requires-python = ">={'.'.join([str(x) for x in REQUIRED_PYTHON])}"
+    classifiers = [
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ]
+
+    [project.urls]
+    "Homepage" = "{_url}"
+    "Bug Tracker" = "{_url}/issues"
+    """
+        )
 else:
-    try:
-        _iv: list = [int(x) for x in require(NAME)[0].version.split('.')]
-        _iv[-1] += 1
-    except:
-        _iv: list = [0, 0, 1]
-    finally:
-        _iv: str = '.'.join([str(x) for x in _iv])
-
-# Creating the .toml file
-if exists('pyproject.toml'):
-    remove('pyproject.toml')
-
-_sb, _eb = "{", "}"
-with open('pyproject.toml', 'w', encoding='utf-8') as tomlwriter:
-    tomlwriter.write(
-        f"""[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "{NAME}"
-version = "{_iv}"
-authors = [
-  {_sb} name="{AUTHOR[0]}", email="{AUTHOR_EMAIL[0]}" {_eb},
-]
-description = "{DESCRIPTION}"
-readme = "README.md"
-requires-python = ">={'.'.join([str(x) for x in REQUIRED_PYTHON])}"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
-
-[project.urls]
-"Homepage" = "{_url}"
-"Bug Tracker" = "{_url}/issues"
-"""
-    )
+    _iv: str = VN if OVERRIDE_VN else require(NAME)[0].version
 
 # Additionnal parameters
 _adp: dict = {}
