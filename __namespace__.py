@@ -10,7 +10,7 @@ MAIN_FUNC: str = "main"
 
 # Change this to ovveride default version number
 OVERRIDE_VN: bool = False
-VN: str = "1.0.0"
+VN: str = "0.0.0"
 
 # Fill this part if your tool features command-line interface
 HAS_COMMAND_LINE: bool = False
